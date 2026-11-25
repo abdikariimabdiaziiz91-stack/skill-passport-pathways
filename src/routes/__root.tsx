@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -81,16 +82,29 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "UjuziPass — AI Skill Passport & Credential Mapper" },
+      {
+        name: "description",
+        content:
+          "Ending refugee brain waste by validating real skills and mapping foreign credentials to East African and global standards.",
+      },
+      { name: "author", content: "UjuziPass · PLP Africa & ILO PROSPECTS" },
+      { property: "og:title", content: "UjuziPass — AI Skill Passport & Credential Mapper" },
+      {
+        property: "og:description",
+        content:
+          "AI-verified skill passports and KNQA credential mapping for displaced professionals across East Africa.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@500;600;700&display=swap",
+      },
       {
         rel: "stylesheet",
         href: appCss,
@@ -125,6 +139,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <Toaster position="bottom-right" richColors />
     </QueryClientProvider>
   );
 }

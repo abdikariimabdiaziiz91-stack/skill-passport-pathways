@@ -1,23 +1,177 @@
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { BarChart3, BadgeCheck, Cpu, ShieldCheck, Users } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { EvaluatorTab } from "@/components/EvaluatorTab";
+import { PassportTab } from "@/components/PassportTab";
+import { DirectoryTab } from "@/components/DirectoryTab";
+import { ImpactTab } from "@/components/ImpactTab";
+import {
+  INITIAL_PASSPORTS,
+  loadStoredOffers,
+  loadStoredPassports,
+  saveStoredOffers,
+  saveStoredPassports,
+  type InterviewOffer,
+  type SkillPassport,
+} from "@/lib/ujuzi-data";
 
-// The home route ships no og:image, so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "UjuziPass — AI Skill Passport & Credential Mapper" },
+      {
+        name: "description",
+        content:
+          "Ending refugee brain waste by proving real skills without paper records. Built for PLP Africa & ILO PROSPECTS.",
+      },
+      { property: "og:title", content: "UjuziPass — AI Skill Passport & Credential Mapper" },
+      {
+        property: "og:description",
+        content:
+          "Validate competencies, map foreign credentials to KNQA standards, and connect displaced professionals with hiring partners.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: UjuziPassApp,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function UjuziPassApp() {
+  const [activeTab, setActiveTab] = useState("evaluator");
+  const [passports, setPassports] = useState<SkillPassport[]>(INITIAL_PASSPORTS);
+  const [selectedPassportId, setSelectedPassportId] = useState<string>(INITIAL_PASSPORTS[0]!.id);
+  const [offers, setOffers] = useState<InterviewOffer[]>([]);
+
+  useEffect(() => {
+    const stored = loadStoredPassports();
+    setPassports(stored);
+    const params = new URLSearchParams(window.location.search);
+    const linkedId = params.get("passport");
+    if (linkedId && stored.some((p) => p.id === linkedId)) {
+      setSelectedPassportId(linkedId);
+      setActiveTab("passport");
+    } else if (stored[0]) {
+      setSelectedPassportId(stored[0].id);
+    }
+    setOffers(loadStoredOffers());
+  }, []);
+
+  const handlePassportCreated = (newPassport: SkillPassport) => {
+    setPassports((prev) => {
+      const next = [newPassport, ...prev];
+      saveStoredPassports(next);
+      return next;
+    });
+    setSelectedPassportId(newPassport.id);
+  };
+
+  const handleOpenPassport = (passportId: string) => {
+    setSelectedPassportId(passportId);
+    setActiveTab("passport");
+  };
+
+  const handleSendOffer = (offer: InterviewOffer) => {
+    setOffers((prev) => {
+      const next = [offer, ...prev];
+      saveStoredOffers(next);
+      return next;
+    });
+  };
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="no-print sticky top-0 z-30 border-b border-border/80 bg-card/95 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <span className="font-display text-lg font-bold tracking-tight text-foreground">
+                UjuziPass
+              </span>
+              <span className="hidden text-xs text-muted-foreground sm:ml-2 sm:inline">
+                AI Skill Passport &amp; Credential Mapper
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="hidden border-primary/30 bg-primary-soft text-primary sm:inline-flex">
+              PLP Africa · ILO PROSPECTS
+            </Badge>
+            <Badge className="bg-verified text-verified-foreground hover:bg-verified">
+              Track 1 · SDGs 4 &amp; 8
+            </Badge>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+        <section className="no-print mb-7 rounded-2xl border border-border/80 bg-card px-5 py-6 shadow-sm sm:px-8 sm:py-7">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+            Turkana &amp; Garissa County Governments · Microsoft · ILO PROSPECTS
+          </p>
+          <h1 className="mt-2 max-w-3xl text-2xl font-bold tracking-tight text-foreground sm:text-4xl">
+            Ending Refugee Brain Waste: Proving Real Skills Without Paper Records
+          </h1>
+          <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+            Verify practical competency in minutes, map unrecognized foreign degrees to KNQA
+            standards, and connect displaced professionals directly with hiring partners.
+          </p>
+        </section>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="no-print grid h-auto w-full grid-cols-2 gap-1.5 rounded-xl bg-secondary p-1.5 lg:grid-cols-4">
+            <TabsTrigger value="evaluator" className="gap-1.5 py-2.5 text-xs sm:text-sm">
+              <Cpu className="h-4 w-4 shrink-0" />
+              <span className="truncate">Skill Evaluator</span>
+            </TabsTrigger>
+            <TabsTrigger value="passport" className="gap-1.5 py-2.5 text-xs sm:text-sm">
+              <BadgeCheck className="h-4 w-4 shrink-0" />
+              <span className="truncate">Verified Passport</span>
+            </TabsTrigger>
+            <TabsTrigger value="directory" className="gap-1.5 py-2.5 text-xs sm:text-sm">
+              <Users className="h-4 w-4 shrink-0" />
+              <span className="truncate">Talent Directory</span>
+            </TabsTrigger>
+            <TabsTrigger value="impact" className="gap-1.5 py-2.5 text-xs sm:text-sm">
+              <BarChart3 className="h-4 w-4 shrink-0" />
+              <span className="truncate">Impact &amp; SDGs</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="evaluator" className="mt-0">
+            <EvaluatorTab
+              onPassportCreated={handlePassportCreated}
+              onOpenPassport={handleOpenPassport}
+            />
+          </TabsContent>
+
+          <TabsContent value="passport" className="mt-0">
+            <PassportTab
+              passports={passports}
+              selectedPassportId={selectedPassportId}
+              onSelectPassport={setSelectedPassportId}
+            />
+          </TabsContent>
+
+          <TabsContent value="directory" className="mt-0">
+            <DirectoryTab
+              passports={passports}
+              offers={offers}
+              onSendOffer={handleSendOffer}
+              onInspectPassport={handleOpenPassport}
+            />
+          </TabsContent>
+
+          <TabsContent value="impact" className="mt-0">
+            <ImpactTab passports={passports} offers={offers} />
+          </TabsContent>
+        </Tabs>
+      </main>
     </div>
   );
 }
