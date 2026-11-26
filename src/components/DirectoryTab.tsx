@@ -9,6 +9,7 @@ import {
   Send,
 } from "lucide-react";
 import { toast } from "sonner";
+import type { AuthUser } from "@/lib/ujuzi-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ import {
 } from "@/lib/ujuzi-data";
 
 interface DirectoryTabProps {
+  currentUser: AuthUser | null;
   passports: SkillPassport[];
   offers: InterviewOffer[];
   onSendOffer: (offer: InterviewOffer) => void;
@@ -38,6 +40,7 @@ interface DirectoryTabProps {
 }
 
 export function DirectoryTab({
+  currentUser,
   passports,
   offers,
   onSendOffer,
@@ -86,6 +89,7 @@ export function DirectoryTab({
       offerType,
       message: message.trim() || `Direct ${offerType.toLowerCase()} invitation via UjuziPass.`,
       createdAt: new Date().toISOString().slice(0, 10),
+      ...(currentUser ? { sentByEmail: currentUser.email } : {}),
     };
     onSendOffer(newOffer);
     toast.success(`${offerType} request sent to ${activeCandidate.fullName} from ${organization.trim()}.`);
@@ -238,7 +242,12 @@ export function DirectoryTab({
                   <Button
                     type="button"
                     size="sm"
-                    onClick={() => setActiveCandidate(talent)}
+                    onClick={() => {
+                      setActiveCandidate(talent);
+                      if (currentUser?.organization && !organization) {
+                        setOrganization(currentUser.organization);
+                      }
+                    }}
                     className="flex-1 gap-1.5"
                   >
                     <Send className="h-3.5 w-3.5" />

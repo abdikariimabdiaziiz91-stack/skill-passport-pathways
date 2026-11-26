@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { BarChart3, BadgeCheck, Cpu, ShieldCheck, Users } from "lucide-react";
+import { BarChart3, BadgeCheck, Cpu, LogOut, ShieldCheck, UserCheck, Users } from "lucide-react";
+import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { AuthModal } from "@/components/AuthModal";
 import { EvaluatorTab } from "@/components/EvaluatorTab";
 import { PassportTab } from "@/components/PassportTab";
 import { DirectoryTab } from "@/components/DirectoryTab";
 import { ImpactTab } from "@/components/ImpactTab";
+import { loadActiveSession, saveActiveSession, type AuthUser } from "@/lib/ujuzi-auth";
 import {
   INITIAL_PASSPORTS,
   loadStoredOffers,
@@ -44,6 +48,9 @@ function UjuziPassApp() {
   const [passports, setPassports] = useState<SkillPassport[]>(INITIAL_PASSPORTS);
   const [selectedPassportId, setSelectedPassportId] = useState<string>(INITIAL_PASSPORTS[0]!.id);
   const [offers, setOffers] = useState<InterviewOffer[]>([]);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState<"signin" | "signup">("signin");
 
   useEffect(() => {
     const stored = loadStoredPassports();
@@ -57,7 +64,19 @@ function UjuziPassApp() {
       setSelectedPassportId(stored[0].id);
     }
     setOffers(loadStoredOffers());
+    setCurrentUser(loadActiveSession());
   }, []);
+
+  const openAuthModal = (tab: "signin" | "signup") => {
+    setAuthModalTab(tab);
+    setAuthModalOpen(true);
+  };
+
+  const handleSignOut = () => {
+    saveActiveSession(null);
+    setCurrentUser(null);
+    toast.info("Signed out of UjuziPass.");
+  };
 
   const handlePassportCreated = (newPassport: SkillPassport) => {
     setPassports((prev) => {
@@ -99,12 +118,45 @@ function UjuziPassApp() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="hidden border-primary/30 bg-primary-soft text-primary sm:inline-flex">
+            <Badge variant="outline" className="hidden border-primary/30 bg-primary-soft text-primary lg:inline-flex">
               PLP Africa · ILO PROSPECTS
             </Badge>
-            <Badge className="bg-verified text-verified-foreground hover:bg-verified">
-              Track 1 · SDGs 4 &amp; 8
-            </Badge>
+            {currentUser ? (
+              <div className="flex items-center gap-2 rounded-full border border-border bg-secondary/70 py-1 pl-3 pr-1.5">
+                <UserCheck className="hidden h-3.5 w-3.5 text-primary sm:block" />
+                <span className="max-w-[110px] truncate text-xs font-semibold text-foreground sm:max-w-[150px]">
+                  {currentUser.fullName}
+                </span>
+                <Badge
+                  className={
+                    currentUser.role === "candidate"
+                      ? "hidden bg-primary text-primary-foreground hover:bg-primary sm:inline-flex"
+                      : "hidden bg-verified text-verified-foreground hover:bg-verified sm:inline-flex"
+                  }
+                >
+                  {currentUser.role === "candidate" ? "Skilled Candidate" : "Hiring Partner"}
+                </Badge>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSignOut}
+                  className="h-7 gap-1 rounded-full px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Sign Out</span>
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => openAuthModal("signin")}>
+                  Sign In
+                </Button>
+                <Button type="button" size="sm" onClick={() => openAuthModal("signup")}>
+                  Get Started
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -145,6 +197,7 @@ function UjuziPassApp() {
 
           <TabsContent value="evaluator" className="mt-0">
             <EvaluatorTab
+              currentUser={currentUser}
               onPassportCreated={handlePassportCreated}
               onOpenPassport={handleOpenPassport}
             />
@@ -160,6 +213,7 @@ function UjuziPassApp() {
 
           <TabsContent value="directory" className="mt-0">
             <DirectoryTab
+              currentUser={currentUser}
               passports={passports}
               offers={offers}
               onSendOffer={handleSendOffer}
@@ -172,6 +226,13 @@ function UjuziPassApp() {
           </TabsContent>
         </Tabs>
       </main>
+
+      <AuthModal
+        open={authModalOpen}
+        initialTab={authModalTab}
+        onOpenChange={setAuthModalOpen}
+        onAuthSuccess={setCurrentUser}
+      />
     </div>
   );
 }

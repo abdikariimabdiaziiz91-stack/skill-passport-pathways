@@ -34,6 +34,7 @@ export interface SkillPassport {
   complianceStatus: string;
   skills: SkillMetric[];
   isUserCreated?: boolean;
+  createdByEmail?: string;
 }
 
 export interface InterviewOffer {
@@ -44,6 +45,7 @@ export interface InterviewOffer {
   offerType: "Fellowship" | "Job Trial" | "Technical Interview";
   message: string;
   createdAt: string;
+  sentByEmail?: string;
 }
 
 export interface AssessmentQuestion {

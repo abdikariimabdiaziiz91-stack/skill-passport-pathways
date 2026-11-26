@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Award,
@@ -10,6 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
+import type { AuthUser } from "@/lib/ujuzi-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,7 @@ import {
 } from "@/lib/ujuzi-data";
 
 interface EvaluatorTabProps {
+  currentUser: AuthUser | null;
   onPassportCreated: (passport: SkillPassport) => void;
   onOpenPassport: (passportId: string) => void;
 }
@@ -38,7 +40,7 @@ const VERIFICATION_STEPS = [
   "Generating Cryptographic Hash ID",
 ];
 
-export function EvaluatorTab({ onPassportCreated, onOpenPassport }: EvaluatorTabProps) {
+export function EvaluatorTab({ currentUser, onPassportCreated, onOpenPassport }: EvaluatorTabProps) {
   const [fullName, setFullName] = useState("");
   const [location, setLocation] = useState<LocationOption>(LOCATIONS[0]!);
   const [field, setField] = useState<SkillField>(SKILL_FIELDS[0]!);
@@ -52,6 +54,18 @@ export function EvaluatorTab({ onPassportCreated, onOpenPassport }: EvaluatorTab
 
   const questions = FIELD_ASSESSMENTS[field];
   const answeredCount = questions.filter((q) => assessmentAnswers[q.id] !== undefined).length;
+
+  useEffect(() => {
+    if (!currentUser) return;
+    if (currentUser.role === "candidate") {
+      setFullName(currentUser.fullName);
+      if (currentUser.location) setLocation(currentUser.location);
+      if (currentUser.field) {
+        setField(currentUser.field);
+        setAssessmentAnswers({});
+      }
+    }
+  }, [currentUser]);
 
   const handleLoadSample = () => {
     setFullName(SAMPLE_CANDIDATE.fullName);
@@ -100,11 +114,14 @@ export function EvaluatorTab({ onPassportCreated, onOpenPassport }: EvaluatorTab
         portfolioLink,
         assessmentAnswers,
       });
+      const enrichedPassport: SkillPassport = currentUser
+        ? { ...passport, createdByEmail: currentUser.email }
+        : passport;
       setIsRunning(false);
       setActiveStep(3);
-      setLatestResult(passport);
-      onPassportCreated(passport);
-      toast.success(`Verified Skill Passport ${passport.id} generated and unlocked!`);
+      setLatestResult(enrichedPassport);
+      onPassportCreated(enrichedPassport);
+      toast.success(`Verified Skill Passport ${enrichedPassport.id} generated and unlocked!`);
     }, 2000);
   };
 
